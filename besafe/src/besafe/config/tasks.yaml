@@ -1,0 +1,65 @@
+extracter_task:
+  description: >
+    Analyze the given URL.
+    Extract:
+    - HTML,CSS,JS files
+    - API endpoints
+    - Any visible keys or tokens
+  expected_output: "JSON array of frontend assets/vulns: [{'url': 'www.example.com', 'type': 'secret/vuln type', 'location': 'file:line', 'description': 'brief desc'}]. Include exposed secrets/tokens."
+  agent: extracters
+
+scanner_task:
+  description: >
+    From the extracted assets, detect API keys and secrets.
+    Classify type and confidence level.
+    You have access to the frontend codebase of the target website.
+  expected_output: "JSON array of vulns/secrets: [{'url': 'www.example.com', 'type': 'secret/vuln type', 'location': 'file:line', 'description': 'brief desc', 'confidence': 'high/medium/low'}]."
+  agent: scanner_agent
+  context:
+    - extracter_task
+
+context_task:
+  description: >
+    Analyze detected secrets.
+    Determine:
+    - How they are used
+    - Whether they can be abused
+    - Real-world impact
+  expected_output: "Per-finding analysis: secret usage context, abuse potential, real-world impact. Structured list matching scanner_task format."
+  agent: context_analyst
+  context:
+    - scanner_task
+
+risk_task:
+  description: >
+    Assign severity (LOW, MEDIUM, HIGH, CRITICAL)
+    Provide risk score out of 100.
+  expected_output: "Per-finding severity (LOW/MEDIUM/HIGH/CRITICAL) and risk score (0-100)."
+  agent: risk_scorer
+  context:
+    - context_task
+
+remediation_task:
+  description: >
+    For each vulnerability, provide actionable remediation steps.
+    Include code snippets, configuration changes, and best practices.
+  expected_output: "Per-vuln actionable remediation: steps, code snippets, configs. Structured by finding."
+  agent: remediation_advisor
+  context:
+    - context_task
+    - risk_task
+
+reporting_task:
+  description: >
+    Generate final report with:
+    - Summary
+    - Findings
+    - Risks
+    - Fixes
+  expected_output: "Final Markdown report with # BeSafe Security Report ## Summary ## Findings ## Risks ## Fixes. Save as besafe/reports/be_safe_report_{current_year}.md"
+  agent: report_generator
+  context:
+    - context_task
+    - risk_task
+    - remediation_task
+
